@@ -8,7 +8,7 @@ func (app *application) router() *mux.Router {
 	router := mux.NewRouter()
 	apiVersion := app.config.version
 
-	router.HandleFunc("/"+apiVersion+"/getFoods", app.getFoodList).Methods("GET")
+	router.HandleFunc("/"+apiVersion+"/users", app.getUsers).Methods("GET")
 
 	return router
 }

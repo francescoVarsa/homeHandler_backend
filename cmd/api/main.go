@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"homeHandler/models"
 	"log"
 	"net/http"
 	"os"
@@ -20,24 +21,26 @@ type config struct {
 type application struct {
 	logger *log.Logger
 	config config
+	models models.Models
 }
 
 func main() {
+	db, err := openDB()
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	defer db.Close()
+
 	app := &application{
 		logger: log.New(os.Stdout, "", log.Ldate|log.Ltime),
 		config: config{
 			version: "v1",
 			port:    4000,
 		},
+		models: models.NewModels(db),
 	}
-
-	db, err := openDB()
-
-	if err != nil {
-		app.logger.Fatal(err)
-		return
-	}
-	defer db.Close()
 
 	srv := &http.Server{
 		Handler: app.router(),

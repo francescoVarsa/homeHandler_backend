@@ -1,39 +1,49 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"homeHandler/models"
-	"log"
 	"net/http"
+	"time"
 )
 
-func (app *application) getFoodList(w http.ResponseWriter, r *http.Request) {
-	var apple models.Food
-	var pasta models.Food
+func (app *application) getUsers(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
 
-	apple.ID = 1
-	apple.FoodName = "Apple"
-	apple.Quantity = 2
-	apple.MacroNutrients = "sugar"
-	apple.Calories = 230
+	query := `select * from users`
 
-	pasta.ID = 2
-	pasta.FoodName = "Pasta"
-	pasta.Quantity = 150
-	pasta.MacroNutrients = "carbohydrates"
-	pasta.Calories = 300
-
-	var foodList = models.FoodList{apple, pasta}
-
-	w.Header().Set("Content-Type", "application/json")
-	j, err := json.MarshalIndent(foodList, "", " ")
+	rows, err := app.models.DB.DB.QueryContext(ctx, query)
 
 	if err != nil {
-		log.Println(err)
+		app.logger.Println(err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Write(j)
+	var user models.User
+	var users []models.User
+	for rows.Next() {
+		err := rows.Scan(&user.ID, &user.Name, &user.LastName, &user.Password, &user.Email)
 
+		if err != nil {
+			app.logger.Println(err)
+			return
+		}
+
+		users = append(users, user)
+	}
+
+	usersJson, err := json.MarshalIndent(users, "", " ")
+
+	if err != nil {
+		app.logger.Println(err)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	w.Write(usersJson)
 }
