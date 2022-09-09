@@ -16,23 +16,34 @@ func NewModels(db *sql.DB) Models {
 	}
 }
 
-type Food struct {
-	ID             int    `json:"id"`
-	FoodName       string `json:"food_name"`
-	Quantity       int    `json:"quantity"`
-	Calories       int    `json:"calories"`
-	MacroNutrients string `json:"macro_nutrients"`
-	MealType       string `json:"meal_type"`
-}
+// type Food struct {
+// 	ID             int    `json:"id"`
+// 	FoodName       string `json:"food_name"`
+// 	Quantity       int    `json:"quantity"`
+// 	Calories       int    `json:"calories"`
+// 	MacroNutrients string `json:"macro_nutrients"`
+// 	MealType       string `json:"meal_type"`
+// }
 
 type FoodList []Food
 
 type User struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	LastName string `json:"last_name"`
-	Password string `json:"password"`
-	Email    string `json:"email"`
+	ID             int             `json:"id"`
+	Name           string          `json:"name"`
+	LastName       string          `json:"last_name"`
+	Password       string          `json:"password"`
+	Email          string          `json:"email"`
+	NutritionPlans []NutritionPlan `json:"nutrition_plans"`
+}
+
+type NutritionPlan struct {
+	ID       int    `json:"-"`
+	PlanName string `json:"plan_name"`
+	Foods    []Food `json:"foods"`
+}
+
+type Food struct {
+	Name string `json:"food_name"`
 }
 
 type UsersList []User
