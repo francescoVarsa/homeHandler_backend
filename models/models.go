@@ -32,6 +32,7 @@ type User struct {
 
 type NutritionPlan struct {
 	ID        int       `json:"-"`
+	UserID    int       `json:"-"`
 	PlanName  string    `json:"plan_name"`
 	Foods     []Food    `json:"foods"`
 	CreatedAt time.Time `json:"-"`

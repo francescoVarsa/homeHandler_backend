@@ -110,3 +110,17 @@ func (m *DBModel) GetPlanFood(planID int) (*FoodList, error) {
 
 	return &foodList, nil
 }
+
+func (m *DBModel) AddFoodPlan(foodPlan *NutritionPlan) (sql.Result, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `insert into nutrition_plans (user_id, plan_name, created_at, updated_at) values ($1, $2, $3, $4)`
+	resource, err := m.DB.ExecContext(ctx, query, foodPlan.UserID, foodPlan.PlanName, time.Now(), time.Now())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resource, nil
+}
