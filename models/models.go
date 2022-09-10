@@ -1,6 +1,9 @@
 package models
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 //Models is the wrapper for database
 type Models struct {
@@ -16,15 +19,6 @@ func NewModels(db *sql.DB) Models {
 	}
 }
 
-// type Food struct {
-// 	ID             int    `json:"id"`
-// 	FoodName       string `json:"food_name"`
-// 	Quantity       int    `json:"quantity"`
-// 	Calories       int    `json:"calories"`
-// 	MacroNutrients string `json:"macro_nutrients"`
-// 	MealType       string `json:"meal_type"`
-// }
-
 type FoodList []Food
 
 type User struct {
@@ -37,13 +31,17 @@ type User struct {
 }
 
 type NutritionPlan struct {
-	ID       int    `json:"-"`
-	PlanName string `json:"plan_name"`
-	Foods    []Food `json:"foods"`
+	ID        int       `json:"-"`
+	PlanName  string    `json:"plan_name"`
+	Foods     []Food    `json:"foods"`
+	CreatedAt time.Time `json:"-"`
+	UpdatedAt time.Time `json:"-"`
 }
 
 type Food struct {
-	Name string `json:"food_name"`
+	Name      string `json:"food_name"`
+	MealType  string `json:"meal_type"`
+	DayOfWeek string `json:"day_of_the_week"`
 }
 
 type UsersList []User
