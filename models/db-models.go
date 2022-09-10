@@ -87,7 +87,7 @@ func (m *DBModel) GetPlanFood(planID int) (*FoodList, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	query := `select food_name from foodsList where plan_id = $1`
+	query := `select food_name, meal_type, day_of_the_week from foodsList where plan_id = $1`
 
 	rows, err := m.DB.QueryContext(ctx, query, planID)
 
@@ -96,31 +96,47 @@ func (m *DBModel) GetPlanFood(planID int) (*FoodList, error) {
 	}
 
 	var foodList FoodList
-	var foodName Food
+	var food Food
 
 	for rows.Next() {
-		err := rows.Scan(&foodName.Name)
+		err := rows.Scan(&food.Name, &food.MealType, &food.DayOfWeek)
 
 		if err != nil {
 			return nil, err
 		}
 
-		foodList = append(foodList, foodName)
+		foodList = append(foodList, food)
 	}
 
 	return &foodList, nil
 }
 
-func (m *DBModel) AddFoodPlan(foodPlan *NutritionPlan) (sql.Result, error) {
+func (m *DBModel) AddFoodPlan(foodPlan *NutritionPlan) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	query := `insert into nutrition_plans (user_id, plan_name, created_at, updated_at) values ($1, $2, $3, $4)`
-	resource, err := m.DB.ExecContext(ctx, query, foodPlan.UserID, foodPlan.PlanName, time.Now(), time.Now())
+	_, err := m.DB.ExecContext(ctx, query, foodPlan.UserID, foodPlan.PlanName, time.Now(), time.Now())
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return resource, nil
+	return nil
+}
+
+func (m *DBModel) AddFood(food *Food) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `insert into foodsList (food_name, plan_id, meal_type, day_of_the_week)
+	 values
+	  ($1, (select id from nutrition_plans where id = $2), $3, $4)`
+	_, err := m.DB.ExecContext(ctx, query, food.Name, food.PlanID, food.MealType, food.DayOfWeek)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

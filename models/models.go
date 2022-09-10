@@ -31,7 +31,7 @@ type User struct {
 }
 
 type NutritionPlan struct {
-	ID        int       `json:"-"`
+	ID        int       `json:"plan_id"`
 	UserID    int       `json:"-"`
 	PlanName  string    `json:"plan_name"`
 	Foods     []Food    `json:"foods"`
@@ -40,6 +40,7 @@ type NutritionPlan struct {
 }
 
 type Food struct {
+	PlanID    int    `json:"-"`
 	Name      string `json:"food_name"`
 	MealType  string `json:"meal_type"`
 	DayOfWeek string `json:"day_of_the_week"`

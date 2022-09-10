@@ -48,27 +48,16 @@ func (app *application) NewFoodPlan(w http.ResponseWriter, r *http.Request) {
 	var fPlan models.NutritionPlan
 
 	fPlan.UserID = payload.UserID
-	fPlan.Foods = payload.Foods
 	fPlan.PlanName = payload.PlanName
 
-	_, err = app.models.DB.AddFoodPlan(&fPlan)
+	err = app.models.DB.AddFoodPlan(&fPlan)
 
 	if err != nil {
 		app.logger.Println(err)
 		return
 	}
 
-	type response struct {
-		OK      bool
-		message string
-	}
-
-	var res response
-
-	res.OK = true
-	res.message = ""
-
-	jsonRes, err := json.MarshalIndent(&res, "", " ")
+	jsonRes, err := json.MarshalIndent(&fPlan, "", " ")
 
 	if err != nil {
 		app.logger.Println(err)
@@ -79,5 +68,58 @@ func (app *application) NewFoodPlan(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	w.Write(jsonRes)
+
+}
+
+type FoodPayload struct {
+	Foods []struct {
+		PlanID    int    `json:"plan_id"`
+		Name      string `json:"food_name"`
+		MealType  string `json:"meal_type"`
+		DayOfWeek string `json:"day_of_the_week"`
+	}
+}
+
+func (app *application) AddFoodToPlan(w http.ResponseWriter, r *http.Request) {
+	var payload FoodPayload
+	err := json.NewDecoder(r.Body).Decode(&payload)
+
+	if err != nil {
+		app.logger.Println("=>", err)
+		return
+	}
+
+	var foodEntry models.Food
+	var foodEntries models.FoodList
+
+	for _, f := range payload.Foods {
+		foodEntry.PlanID = f.PlanID
+		foodEntry.Name = f.Name
+		foodEntry.MealType = f.MealType
+		foodEntry.DayOfWeek = f.DayOfWeek
+
+		err = app.models.DB.AddFood(&foodEntry)
+
+		if err != nil {
+			app.logger.Println(err)
+		}
+
+		foodEntries = append(foodEntries, foodEntry)
+	}
+
+	if err != nil {
+		return
+	}
+
+	res, err := json.MarshalIndent(foodEntries, "", " ")
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
 
 }
