@@ -5,6 +5,9 @@ import (
 	"homeHandler/models"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 func (app *application) getUsers(w http.ResponseWriter, r *http.Request) {
@@ -122,4 +125,55 @@ func (app *application) AddFoodToPlan(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(res)
 
+}
+
+func (app *application) RemoveFoodPlan(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	plan_id, err := strconv.Atoi(params["id"])
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	// foodList, err := app.models.DB.GetPlanFood(plan_id)
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	// delete all foods related to the plan
+	err = app.models.DB.RemoveFood(plan_id)
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	err = app.models.DB.DeleteNutritionPlan(plan_id)
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	var res struct {
+		OK      bool
+		message string
+	}
+
+	res.OK = true
+	res.message = ""
+
+	response, err := json.MarshalIndent(&res, "", " ")
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }

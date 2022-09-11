@@ -140,3 +140,52 @@ func (m *DBModel) AddFood(food *Food) error {
 
 	return nil
 }
+
+func (m *DBModel) DeleteNutritionPlan(plan_id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `delete from nutrition_plans where id = $1`
+
+	_, err := m.DB.ExecContext(ctx, query, plan_id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *DBModel) RemoveFood(plan_id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `delete from foodslist where plan_id = $1`
+
+	_, err := m.DB.ExecContext(ctx, query, plan_id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *DBModel) GetPlanByID(planID int) (*NutritionPlan, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select id, user_id, plan_name, created_at, updated_at from nutrition_plans where id = $1`
+	row := m.DB.QueryRowContext(ctx, query, planID)
+
+	var plan NutritionPlan
+
+	err := row.Scan(&plan.ID, &plan.UserID, &plan.PlanName, &plan.CreatedAt, &plan.UpdatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &plan, nil
+
+}
