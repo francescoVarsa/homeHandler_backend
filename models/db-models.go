@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 )
@@ -188,4 +189,19 @@ func (m *DBModel) GetPlanByID(planID int) (*NutritionPlan, error) {
 
 	return &plan, nil
 
+}
+
+func (m *DBModel) UpdateFood(colName string, value string, foodID int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := fmt.Sprintf("update foodsList set %s = $1 where id = $2", colName)
+
+	_, err := m.DB.ExecContext(ctx, query, value, foodID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

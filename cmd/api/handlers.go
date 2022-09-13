@@ -177,3 +177,46 @@ func (app *application) RemoveFoodPlan(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
+
+func (app *application) UpdateFood(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	type reqBody struct {
+		FoodName  string `json:"food_name"`
+		DayOfWeek string `json:"day_of_the_week"`
+		MealType  string `json:"meal_type"`
+	}
+
+	var payload reqBody
+
+	err = json.NewDecoder(r.Body).Decode(&payload)
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	newFood := make(map[string]string)
+
+	// Only those are the fields that user can update
+	newFood["food_name"] = payload.FoodName
+	newFood["day_of_the_week"] = payload.DayOfWeek
+	newFood["meal_type"] = payload.MealType
+
+	for key, val := range newFood {
+		if len(val) != 0 {
+			err := app.models.DB.UpdateFood(key, val, id)
+
+			if err != nil {
+				app.logger.Println(err)
+				return
+			}
+		}
+	}
+}
