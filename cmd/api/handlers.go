@@ -211,7 +211,7 @@ func (app *application) UpdateFood(w http.ResponseWriter, r *http.Request) {
 
 	for key, val := range newFood {
 		if len(val) != 0 {
-			err := app.models.DB.UpdateFood(key, val, id)
+			_, err := app.models.DB.UpdateFood(key, val, id)
 
 			if err != nil {
 				app.logger.Println(err)
@@ -219,4 +219,51 @@ func (app *application) UpdateFood(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
+	updatedFood, err := app.models.DB.GetFoodByID(id)
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	res, err := json.MarshalIndent(&updatedFood, "", " ")
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
+}
+
+func (app *application) GetFood(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	food, err := app.models.DB.GetFoodByID(id)
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	res, err := json.MarshalIndent(&food, "", " ")
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
+
 }

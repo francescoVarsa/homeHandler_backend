@@ -191,7 +191,7 @@ func (m *DBModel) GetPlanByID(planID int) (*NutritionPlan, error) {
 
 }
 
-func (m *DBModel) UpdateFood(colName string, value string, foodID int) error {
+func (m *DBModel) UpdateFood(colName string, value string, foodID int) (*Food, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -200,8 +200,27 @@ func (m *DBModel) UpdateFood(colName string, value string, foodID int) error {
 	_, err := m.DB.ExecContext(ctx, query, value, foodID)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
+}
+
+func (m *DBModel) GetFoodByID(id int) (*Food, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select plan_id, food_name, meal_type, day_of_the_week from foodslist where id = $1`
+
+	row := m.DB.QueryRowContext(ctx, query, id)
+
+	var food Food
+
+	err := row.Scan(&food.PlanID, &food.Name, &food.MealType, &food.DayOfWeek)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &food, nil
 }
