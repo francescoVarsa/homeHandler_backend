@@ -224,3 +224,18 @@ func (m *DBModel) GetFoodByID(id int) (*Food, error) {
 
 	return &food, nil
 }
+
+func (m *DBModel) CreateUser(user User) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `insert into users (name, last_name, password, email) values ($1, $2, $3, $4)`
+
+	_, err := m.DB.ExecContext(ctx, query, user.Name, user.LastName, user.Password, user.Email)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

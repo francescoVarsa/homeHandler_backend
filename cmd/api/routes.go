@@ -15,5 +15,7 @@ func (app *application) router() *mux.Router {
 	router.HandleFunc("/"+apiVersion+"/removePlan/{id}", app.RemoveFoodPlan).Methods("DELETE")
 	router.HandleFunc("/"+apiVersion+"/updateFood/{id}", app.UpdateFood).Methods("PATCH")
 
+	router.HandleFunc("/"+apiVersion+"/signUp", app.SignUp).Methods("POST")
+
 	return router
 }
