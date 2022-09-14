@@ -239,3 +239,22 @@ func (m *DBModel) CreateUser(user User) error {
 
 	return nil
 }
+
+func (m *DBModel) GetUserPassword(email string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select password from users where email = $1`
+
+	row := m.DB.QueryRowContext(ctx, query, email)
+
+	var pwd string
+
+	err := row.Scan(&pwd)
+
+	if err != nil {
+		return "", err
+	}
+
+	return pwd, nil
+}

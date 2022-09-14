@@ -114,3 +114,52 @@ func (app *application) SignUp(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(resJson)
 }
+
+func (app *application) SignIn(w http.ResponseWriter, r *http.Request) {
+	var cred Credentials
+
+	err := json.NewDecoder(r.Body).Decode(&cred)
+
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
+
+	hashedPwd, err := app.models.DB.GetUserPassword(cred.Username)
+
+	if err != nil || len(hashedPwd) == 0 {
+		app.logger.Println(err)
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(cred.Password))
+
+	if err != nil || len(hashedPwd) == 0 {
+		app.logger.Println(err)
+		return
+	}
+
+	token, err := createJwt(cred.Username)
+
+	if err != nil || len(hashedPwd) == 0 {
+		app.logger.Println(err)
+		return
+	}
+
+	var response struct {
+		Token string `json:"token"`
+	}
+
+	response.Token = token
+
+	res, err := json.MarshalIndent(&response, "", " ")
+
+	if err != nil || len(hashedPwd) == 0 {
+		app.logger.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
+}
