@@ -26,6 +26,7 @@ func handleSecrets() {
 
 		switch key {
 		case "jwt_secret":
+			os.Setenv(key, secret)
 		case "DB_PASSWORD":
 			os.Setenv(key, secret)
 		}
