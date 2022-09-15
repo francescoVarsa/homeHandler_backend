@@ -25,6 +25,7 @@ type application struct {
 }
 
 func main() {
+	handleSecrets()
 	db, err := openDB()
 
 	if err != nil {
