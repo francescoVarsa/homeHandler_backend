@@ -45,7 +45,7 @@ func createJwt(email string) (string, error) {
 	claims.Subject = email
 	claims.Issued = jwt.NewNumericTime(time.Now())
 	claims.NotBefore = jwt.NewNumericTime(time.Now())
-	claims.Expires = jwt.NewNumericTime(time.Now())
+	claims.Expires = jwt.NewNumericTime(time.Now().Add(24 * time.Hour))
 	// Those fields had to be filled with domain name
 	claims.Issuer = "localhost:4000"
 	claims.Audiences = []string{"localhost:4000"}
