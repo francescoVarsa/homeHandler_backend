@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"homeHandler/models"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -14,23 +13,11 @@ func (app *application) getUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := app.models.DB.GetAllUsers()
 
 	if err != nil {
-		//Handle error in a better way
-		log.Println(err)
+		app.errorJSON(w, err)
 		return
 	}
 
-	usersJson, err := json.MarshalIndent(users, "", " ")
-
-	if err != nil {
-		app.logger.Println(err)
-
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(usersJson)
+	app.writeJSON(w, http.StatusOK, users, "data")
 }
 
 type FoodPlanPayload struct {
@@ -44,7 +31,7 @@ func (app *application) NewFoodPlan(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&payload)
 
 	if err != nil {
-		log.Println(err)
+		app.errorJSON(w, err)
 		return
 	}
 
@@ -56,22 +43,19 @@ func (app *application) NewFoodPlan(w http.ResponseWriter, r *http.Request) {
 	err = app.models.DB.AddFoodPlan(&fPlan)
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err)
 		return
 	}
 
-	jsonRes, err := json.MarshalIndent(&fPlan, "", " ")
-
-	if err != nil {
-		app.logger.Println(err)
-		return
+	type responseOK struct {
+		OK      bool
+		Message string
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(jsonRes)
-
+	app.writeJSON(w, http.StatusOK, responseOK{
+		OK:      true,
+		Message: "Plan correctly created",
+	}, "data")
 }
 
 type FoodPayload struct {
@@ -88,7 +72,7 @@ func (app *application) AddFoodToPlan(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&payload)
 
 	if err != nil {
-		app.logger.Println("=>", err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -104,26 +88,18 @@ func (app *application) AddFoodToPlan(w http.ResponseWriter, r *http.Request) {
 		err = app.models.DB.AddFood(&foodEntry)
 
 		if err != nil {
-			app.logger.Println(err)
+			app.errorJSON(w, err)
 		}
 
 		foodEntries = append(foodEntries, foodEntry)
 	}
 
 	if err != nil {
+		app.errorJSON(w, err)
 		return
 	}
 
-	res, err := json.MarshalIndent(foodEntries, "", " ")
-
-	if err != nil {
-		app.logger.Println(err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(res)
+	app.writeJSON(w, http.StatusOK, foodEntries, "data")
 
 }
 
@@ -132,14 +108,7 @@ func (app *application) RemoveFoodPlan(w http.ResponseWriter, r *http.Request) {
 	plan_id, err := strconv.Atoi(params["id"])
 
 	if err != nil {
-		app.logger.Println(err)
-		return
-	}
-
-	// foodList, err := app.models.DB.GetPlanFood(plan_id)
-
-	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err)
 		return
 	}
 
@@ -147,35 +116,18 @@ func (app *application) RemoveFoodPlan(w http.ResponseWriter, r *http.Request) {
 	err = app.models.DB.RemoveFood(plan_id)
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err)
 		return
 	}
 
 	err = app.models.DB.DeleteNutritionPlan(plan_id)
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err)
 		return
 	}
 
-	var res struct {
-		OK      bool
-		message string
-	}
-
-	res.OK = true
-	res.message = ""
-
-	response, err := json.MarshalIndent(&res, "", " ")
-
-	if err != nil {
-		app.logger.Println(err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
+	app.writeJSON(w, http.StatusNoContent, nil, "data")
 }
 
 func (app *application) UpdateFood(w http.ResponseWriter, r *http.Request) {
@@ -183,7 +135,7 @@ func (app *application) UpdateFood(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(params["id"])
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -198,7 +150,7 @@ func (app *application) UpdateFood(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&payload)
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -214,7 +166,7 @@ func (app *application) UpdateFood(w http.ResponseWriter, r *http.Request) {
 			_, err := app.models.DB.UpdateFood(key, val, id)
 
 			if err != nil {
-				app.logger.Println(err)
+				app.errorJSON(w, err)
 				return
 			}
 		}
@@ -223,20 +175,11 @@ func (app *application) UpdateFood(w http.ResponseWriter, r *http.Request) {
 	updatedFood, err := app.models.DB.GetFoodByID(id)
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err)
 		return
 	}
 
-	res, err := json.MarshalIndent(&updatedFood, "", " ")
-
-	if err != nil {
-		app.logger.Println(err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(res)
+	app.writeJSON(w, http.StatusOK, updatedFood, "data")
 }
 
 func (app *application) GetFood(w http.ResponseWriter, r *http.Request) {
@@ -244,26 +187,17 @@ func (app *application) GetFood(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(params["id"])
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	food, err := app.models.DB.GetFoodByID(id)
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err)
 		return
 	}
 
-	res, err := json.MarshalIndent(&food, "", " ")
-
-	if err != nil {
-		app.logger.Println(err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(res)
+	app.writeJSON(w, http.StatusOK, food, "data")
 
 }
