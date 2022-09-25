@@ -68,7 +68,7 @@ func (app *application) SignUp(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (app *application) SignUp(w http.ResponseWriter, r *http.Request) {
 	err = app.models.DB.CreateUser(newUser)
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -91,7 +91,7 @@ func (app *application) SignUp(w http.ResponseWriter, r *http.Request) {
 	token, err := createJwt(newUser.Email)
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -106,7 +106,7 @@ func (app *application) SignUp(w http.ResponseWriter, r *http.Request) {
 	resJson, err := json.MarshalIndent(&response, "", " ")
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -121,28 +121,28 @@ func (app *application) SignIn(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&cred)
 
 	if err != nil {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
 	hashedPwd, err := app.models.DB.GetUserPassword(cred.Username)
 
 	if err != nil || len(hashedPwd) == 0 {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusUnauthorized)
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(cred.Password))
 
 	if err != nil || len(hashedPwd) == 0 {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusUnauthorized)
 		return
 	}
 
 	token, err := createJwt(cred.Username)
 
 	if err != nil || len(hashedPwd) == 0 {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -155,7 +155,7 @@ func (app *application) SignIn(w http.ResponseWriter, r *http.Request) {
 	res, err := json.MarshalIndent(&response, "", " ")
 
 	if err != nil || len(hashedPwd) == 0 {
-		app.logger.Println(err)
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
