@@ -258,3 +258,21 @@ func (m *DBModel) GetUserPassword(email string) (string, error) {
 
 	return pwd, nil
 }
+
+func (m *DBModel) CheckExistingUser(username string) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select email from users where email = $1`
+	row := m.DB.QueryRowContext(ctx, query, username)
+
+	var userEmail string
+	err := row.Scan(&userEmail)
+
+	if err != nil || len(userEmail) == 0 {
+		return false
+	}
+
+	return true
+
+}

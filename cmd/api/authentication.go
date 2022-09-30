@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"homeHandler/models"
 	"log"
 	"net/http"
@@ -69,6 +70,14 @@ func (app *application) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		app.errorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	userExists := app.models.DB.CheckExistingUser(newUser.Email)
+
+	if userExists {
+		err = errors.New("the user you are trying to register already exists")
+		app.errorJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
