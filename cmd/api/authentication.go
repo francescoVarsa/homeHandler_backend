@@ -105,7 +105,7 @@ func (app *application) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type jwtResponse struct {
-		Token string `json:"jwt"`
+		Token string `json:"token"`
 	}
 
 	var response jwtResponse
