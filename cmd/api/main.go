@@ -11,6 +11,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	mail "github.com/xhit/go-simple-mail/v2"
 )
 
 type config struct {
@@ -19,9 +20,10 @@ type config struct {
 }
 
 type application struct {
-	logger *log.Logger
-	config config
-	models models.Models
+	logger   *log.Logger
+	config   config
+	models   models.Models
+	mailChan chan string
 }
 
 func main() {
@@ -51,13 +53,41 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
+	// Setup an email server
+	server := mail.NewSMTPClient()
+	// This is the IP address of the container that keeps the mailhog mail server used in
+	// development. If the container is destroyed the IP will change and emails are not be
+	// sended
+	server.Host = "172.18.0.2"
+	server.Port = 1025
+	server.Username = "admin@example.com"
+	server.Password = "superSecretPassword"
+	server.ConnectTimeout = 10 * time.Second
+	server.SendTimeout = 10 * time.Second
+
+	smtpClient, err := server.Connect()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	emailChannel := make(chan string)
+	app.mailChan = emailChannel
+
+	log.Println("Email server on and ready for incoming emails")
+	go func() {
+		for {
+			msg := <-emailChannel
+			SendMessage(msg, smtpClient)
+		}
+	}()
+
 	log.Printf("Server is running on port: %d", app.config.port)
 
 	err = srv.ListenAndServe()
 	if err != nil {
 		log.Println(err)
 	}
-
 }
 
 func openDB() (*sql.DB, error) {

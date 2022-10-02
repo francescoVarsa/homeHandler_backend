@@ -172,3 +172,19 @@ func (app *application) SignIn(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(res)
 }
+
+func (app *application) resetPassword(w http.ResponseWriter, r *http.Request) {
+	type MailData struct {
+		To      string
+		From    string
+		Subject string
+		Content string
+	}
+
+	ch := app.mailChan
+
+	// Send email text content through the email channel
+	ch <- "Reset your password here"
+
+	app.writeJSON(w, http.StatusOK, "Email sended", "message")
+}
