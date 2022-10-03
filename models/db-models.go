@@ -276,3 +276,20 @@ func (m *DBModel) CheckExistingUser(username string) bool {
 	return true
 
 }
+
+func (m *DBModel) GetUserByUsername(username string) (*User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select email, last_name, id, name from users where email = $1`
+	row := m.DB.QueryRowContext(ctx, query, username)
+
+	var user User
+	err := row.Scan(&user.Email, &user.LastName, &user.ID, &user.Name)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}

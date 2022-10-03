@@ -23,7 +23,10 @@ type application struct {
 	logger   *log.Logger
 	config   config
 	models   models.Models
-	mailChan chan string
+	mailChan chan struct {
+		To  string
+		Msg string
+	}
 }
 
 func main() {
@@ -71,14 +74,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	emailChannel := make(chan string)
+	emailChannel := make(chan struct {
+		To  string
+		Msg string
+	})
 	app.mailChan = emailChannel
 
 	log.Println("Email server on and ready for incoming emails")
 	go func() {
 		for {
 			msg := <-emailChannel
-			SendMessage(msg, smtpClient)
+			SendMessage(msg.Msg, msg.To, smtpClient)
 		}
 	}()
 

@@ -6,10 +6,10 @@ import (
 	mail "github.com/xhit/go-simple-mail/v2"
 )
 
-func SendMessage(msg string, smtpClient *mail.SMTPClient) {
+func SendMessage(msg string, to string, smtpClient *mail.SMTPClient) {
 	email := mail.NewMSG()
-	email.SetFrom("From Example admin@homeHandler.com").
-		AddTo("me@example.com").
+	email.SetFrom("admin@homeHandler.com").
+		AddTo(to).
 		SetSubject("New Go Email")
 
 	email.SetBody(mail.TextPlain, msg)

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"homeHandler/models"
 	"log"
 	"net/http"
@@ -41,12 +42,12 @@ func hashingSecret(secret string) string {
 
 }
 
-func createJwt(email string) (string, error) {
+func createJwt(email string, expirationTime int) (string, error) {
 	var claims jwt.Claims
 	claims.Subject = email
 	claims.Issued = jwt.NewNumericTime(time.Now())
 	claims.NotBefore = jwt.NewNumericTime(time.Now())
-	claims.Expires = jwt.NewNumericTime(time.Now().Add(24 * time.Hour))
+	claims.Expires = jwt.NewNumericTime(time.Now().Add(time.Duration(expirationTime)))
 	// Those fields had to be filled with domain name
 	claims.Issuer = "localhost:4000"
 	claims.Audiences = []string{"localhost:4000"}
@@ -97,7 +98,8 @@ func (app *application) SignUp(w http.ResponseWriter, r *http.Request) {
 	cred.Username = newUser.Email
 	cred.Password = newUser.Password
 
-	token, err := createJwt(newUser.Email)
+	duration := 24 * time.Hour
+	token, err := createJwt(newUser.Email, int(duration))
 
 	if err != nil {
 		app.errorJSON(w, err, http.StatusInternalServerError)
@@ -148,7 +150,8 @@ func (app *application) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := createJwt(cred.Username)
+	duration := 24 * time.Hour
+	token, err := createJwt(cred.Username, int(duration))
 
 	if err != nil || len(hashedPwd) == 0 {
 		app.errorJSON(w, err, http.StatusInternalServerError)
@@ -174,17 +177,52 @@ func (app *application) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) resetPassword(w http.ResponseWriter, r *http.Request) {
-	type MailData struct {
-		To      string
-		From    string
-		Subject string
-		Content string
+	var payload struct {
+		Username string `json:"username"`
 	}
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+
+	if err != nil {
+		app.errorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	// Search in database if user exists and eventually retrive it
+	user, err := app.models.DB.GetUserByUsername(payload.Username)
+
+	if err != nil {
+		app.errorJSON(w, errors.New("this user doesn't exists"), http.StatusBadRequest)
+		return
+
+	}
+
+	// Generate a token that will be embed in the link in the email for password reset
+	jwt, err := createJwt(user.Email, int(5*time.Minute))
+
+	if err != nil {
+		app.errorJSON(w, errors.New("error while generating the temporary auth token"))
+		return
+	}
+
+	resetLink := fmt.Sprintf("http://localhost:3000/passwordReset/%s", jwt)
+	msg := fmt.Sprintf(`Hello %s %s ,<br>
+	this email was sent to you with the purpouse of resetting your password. <br> 
+	The procedure is very simple, click on the link below and follow the instructions.
+	<a href="%s">Go to password reset page</a>`, user.Name, user.LastName, resetLink)
 
 	ch := app.mailChan
 
+	var emailInfo struct {
+		To  string
+		Msg string
+	}
+
+	emailInfo.Msg = msg
+	emailInfo.To = user.Email
+
 	// Send email text content through the email channel
-	ch <- "Reset your password here"
+	ch <- emailInfo
 
 	app.writeJSON(w, http.StatusOK, "Email sended", "message")
 }

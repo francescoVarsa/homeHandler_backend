@@ -47,3 +47,10 @@ type Food struct {
 }
 
 type UsersList []User
+
+type MailData struct {
+	To      string
+	From    string
+	Subject string
+	Content string
+}
