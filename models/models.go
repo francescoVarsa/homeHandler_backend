@@ -25,8 +25,11 @@ type User struct {
 	ID             int             `json:"id"`
 	Name           string          `json:"name"`
 	LastName       string          `json:"last_name"`
-	Password       string          `json:"password"`
+	Password       string          `json:"-"`
 	Email          string          `json:"email"`
+	Created_at     time.Time       `json:"-"`
+	Updated_at     time.Time       `json:"-"`
+	ResetToken     string          `json:"-"`
 	NutritionPlans []NutritionPlan `json:"nutrition_plans"`
 }
 
@@ -53,4 +56,9 @@ type MailData struct {
 	From    string
 	Subject string
 	Content string
+}
+
+type PasswordResetSchema struct {
+	Token       string `json:"token"`
+	NewPassword string `json:"new_password"`
 }

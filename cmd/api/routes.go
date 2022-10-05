@@ -32,6 +32,7 @@ func (app *application) router() http.Handler {
 	router.HandleFunc("/"+apiVersion+"/signUp", app.SignUp).Methods("POST")
 	router.HandleFunc("/"+apiVersion+"/signIn", app.SignIn).Methods("POST")
 	router.HandleFunc("/"+apiVersion+"/resetPassword", app.resetPassword).Methods("POST")
+	router.HandleFunc("/"+apiVersion+"/saveNewPassword", app.SaveNewPaasword).Methods("POST")
 
 	return router
 }

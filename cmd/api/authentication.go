@@ -205,10 +205,18 @@ func (app *application) resetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Save the reset token on DB
+	err = app.models.DB.SetResetToken(user.ID, jwt)
+
+	if err != nil {
+		app.errorJSON(w, errors.New("error while saving the temporary auth token"))
+		return
+	}
+
 	resetLink := fmt.Sprintf("http://localhost:3000/passwordReset/%s", jwt)
 	msg := fmt.Sprintf(`Hello %s %s ,<br>
 	this email was sent to you with the purpouse of resetting your password. <br> 
-	The procedure is very simple, click on the link below and follow the instructions.
+	The procedure is very simple, click on the link below and follow the instructions.<br>
 	<a href="%s">Go to password reset page</a>`, user.Name, user.LastName, resetLink)
 
 	ch := app.mailChan
@@ -225,4 +233,31 @@ func (app *application) resetPassword(w http.ResponseWriter, r *http.Request) {
 	ch <- emailInfo
 
 	app.writeJSON(w, http.StatusOK, "Email sended", "message")
+}
+
+func (app *application) SaveNewPaasword(w http.ResponseWriter, r *http.Request) {
+	var payload models.PasswordResetSchema
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+
+	if err != nil {
+		app.errorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+
+	secret := os.Getenv("jwt_secret")
+	claims, err := jwt.HMACCheck([]byte(payload.Token), []byte(hashingSecret(secret)))
+
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	if !claims.Valid(time.Now()) {
+		app.errorJSON(w, errors.New("token has expired"))
+		return
+	}
+
+	println(claims.ID)
+
 }

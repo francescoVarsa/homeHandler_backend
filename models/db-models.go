@@ -16,7 +16,7 @@ func (m *DBModel) GetAllUsers() (*UsersList, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	query := `select * from users`
+	query := `select id, name, last_name, email from users`
 
 	rows, err := m.DB.QueryContext(ctx, query)
 
@@ -27,7 +27,11 @@ func (m *DBModel) GetAllUsers() (*UsersList, error) {
 	var user User
 	var users UsersList
 	for rows.Next() {
-		err := rows.Scan(&user.ID, &user.Name, &user.LastName, &user.Password, &user.Email)
+		err := rows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.LastName,
+			&user.Email)
 
 		if err != nil {
 			return nil, err
@@ -292,4 +296,38 @@ func (m *DBModel) GetUserByUsername(username string) (*User, error) {
 	}
 
 	return &user, nil
+}
+
+func (m *DBModel) SetResetToken(id int, token string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `update users set reset_token = $1 where id = $2`
+
+	_, err := m.DB.ExecContext(ctx, query, token, id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *DBModel) GetUserResetToken(id int) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select reset_token from users where id = $1`
+
+	row := m.DB.QueryRowContext(ctx, query, id)
+
+	var resetToken string
+
+	err := row.Scan(&resetToken)
+
+	if err != nil {
+		return "", err
+	}
+
+	return resetToken, nil
 }

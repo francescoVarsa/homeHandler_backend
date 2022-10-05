@@ -12,7 +12,7 @@ func SendMessage(msg string, to string, smtpClient *mail.SMTPClient) {
 		AddTo(to).
 		SetSubject("New Go Email")
 
-	email.SetBody(mail.TextPlain, msg)
+	email.SetBody(mail.TextHTML, msg)
 
 	// always check error after send
 	if email.Error != nil {
