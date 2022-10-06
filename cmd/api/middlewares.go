@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -63,13 +62,10 @@ func (app *application) checkToken(next http.Handler) http.Handler {
 			return
 		}
 
-		userID := claims.Subject
 		if err != nil {
 			app.errorJSON(w, errors.New("unauthorized"), http.StatusForbidden)
 			return
 		}
-
-		log.Println("valid user:", userID)
 
 		next.ServeHTTP(w, r)
 	})

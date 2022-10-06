@@ -22,15 +22,15 @@ func NewModels(db *sql.DB) Models {
 type FoodList []Food
 
 type User struct {
-	ID             int             `json:"id"`
-	Name           string          `json:"name"`
-	LastName       string          `json:"last_name"`
-	Password       string          `json:"-"`
-	Email          string          `json:"email"`
-	Created_at     time.Time       `json:"-"`
-	Updated_at     time.Time       `json:"-"`
-	ResetToken     string          `json:"-"`
-	NutritionPlans []NutritionPlan `json:"nutrition_plans"`
+	ID               int             `json:"id"`
+	Name             string          `json:"name"`
+	LastName         string          `json:"last_name"`
+	Password         string          `json:"-"`
+	Email            string          `json:"email"`
+	Created_at       time.Time       `json:"-"`
+	Updated_at       time.Time       `json:"-"`
+	ResetRequestDate string          `json:"-"`
+	NutritionPlans   []NutritionPlan `json:"nutrition_plans"`
 }
 
 type NutritionPlan struct {

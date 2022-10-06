@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -40,7 +39,6 @@ func (m *DBModel) GetAllUsers() (*UsersList, error) {
 		nutriPlans, err := m.GetNutritionByUser(user.ID)
 
 		if err != nil {
-			log.Println(err)
 			user.NutritionPlans = nil
 		}
 
@@ -285,32 +283,17 @@ func (m *DBModel) GetUserByUsername(username string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	query := `select email, last_name, id, name from users where email = $1`
+	query := `select email, last_name, id, name, coalesce(reset_request_date,'not-set') from users where email = $1`
 	row := m.DB.QueryRowContext(ctx, query, username)
 
 	var user User
-	err := row.Scan(&user.Email, &user.LastName, &user.ID, &user.Name)
+	err := row.Scan(&user.Email, &user.LastName, &user.ID, &user.Name, &user.ResetRequestDate)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &user, nil
-}
-
-func (m *DBModel) SetResetToken(id int, token string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	query := `update users set reset_token = $1 where id = $2`
-
-	_, err := m.DB.ExecContext(ctx, query, token, id)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (m *DBModel) GetUserResetToken(id int) (string, error) {
@@ -336,7 +319,7 @@ func (m *DBModel) SetNewPassword(id int, newPassword string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	query := `update users set reset_token = $1, password = $2, updated_at = $3 where id = $4`
+	query := `update users set reset_request_date = $1, password = $2, updated_at = $3 where id = $4`
 
 	_, err := m.DB.ExecContext(ctx, query, nil, newPassword, time.Now(), id)
 
@@ -345,4 +328,36 @@ func (m *DBModel) SetNewPassword(id int, newPassword string) error {
 	}
 
 	return nil
+}
+
+func (m *DBModel) SavingResetPasswordRequestDate(id int, requestDate string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `update users set reset_request_date = $1 where id = $2`
+	_, err := m.DB.ExecContext(ctx, query, requestDate, id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *DBModel) GetResetPasswordRequestDate(email string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select reset_request_date from users where email = $1`
+	row := m.DB.QueryRowContext(ctx, query, email)
+
+	var date string
+
+	err := row.Scan(&date)
+
+	if err != nil {
+		return "", err
+	}
+
+	return date, nil
 }

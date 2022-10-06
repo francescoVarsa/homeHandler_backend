@@ -42,7 +42,7 @@ func hashingSecret(secret string) string {
 
 }
 
-func createJwt(email string, expirationTime int) (string, error) {
+func createJwt(email string, expirationTime int, secretKey ...string) (string, error) {
 	var claims jwt.Claims
 	claims.Subject = email
 	claims.Issued = jwt.NewNumericTime(time.Now())
@@ -53,7 +53,13 @@ func createJwt(email string, expirationTime int) (string, error) {
 	claims.Audiences = []string{"localhost:4000"}
 
 	// secret used to sign the token
-	secret := hashingSecret(os.Getenv("jwt_secret"))
+	var secret string
+
+	if secretKey != nil {
+		secret = secretKey[0]
+	} else {
+		secret = hashingSecret(os.Getenv("jwt_secret"))
+	}
 
 	jwtBytes, err := claims.HMACSign(jwt.HS256, []byte(secret))
 
@@ -197,16 +203,20 @@ func (app *application) resetPassword(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	// Generate a token that will be embed in the link in the email for password reset
-	jwt, err := createJwt(user.Email, int(5*time.Minute))
+	date := time.Now().Format("2006-01-02 15:04:05")
+
+	// Saving the date when the token was require
+	err = app.models.DB.SavingResetPasswordRequestDate(user.ID, date)
 
 	if err != nil {
-		app.errorJSON(w, errors.New("error while generating the temporary auth token"))
+		app.errorJSON(w, err)
 		return
 	}
 
-	// Save the reset token on DB
-	err = app.models.DB.SetResetToken(user.ID, jwt)
+	secret := hashingSecret(date + user.Email)
+
+	// Generate a token that will be embed in the link in the email for password reset
+	jwt, err := createJwt(user.Email, int(5*time.Minute), secret)
 
 	if err != nil {
 		app.errorJSON(w, errors.New("error while saving the temporary auth token"))
@@ -235,7 +245,7 @@ func (app *application) resetPassword(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, "Email sended", "message")
 }
 
-func (app *application) SaveNewPaasword(w http.ResponseWriter, r *http.Request) {
+func (app *application) SaveNewPasword(w http.ResponseWriter, r *http.Request) {
 	var payload models.PasswordResetSchema
 
 	err := json.NewDecoder(r.Body).Decode(&payload)
@@ -245,7 +255,22 @@ func (app *application) SaveNewPaasword(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	secret := os.Getenv("jwt_secret")
+	claims, err := jwt.ParseWithoutCheck([]byte(payload.Token))
+
+	if err != nil {
+		app.errorJSON(w, errors.New("error while parsing token"), http.StatusUnauthorized)
+		return
+	}
+
+	userEmail := claims.Subject
+	user, err := app.models.DB.GetUserByUsername(userEmail)
+
+	if err != nil {
+		app.errorJSON(w, errors.New("any reset password email was emitted before"), http.StatusUnauthorized)
+		return
+	}
+
+	secret := user.ResetRequestDate + user.Email
 	parsedToken, err := jwt.HMACCheck([]byte(payload.Token), []byte(hashingSecret(secret)))
 
 	if err != nil {
@@ -255,15 +280,6 @@ func (app *application) SaveNewPaasword(w http.ResponseWriter, r *http.Request) 
 
 	if !parsedToken.Valid(time.Now()) {
 		app.errorJSON(w, errors.New("token has expired"))
-		return
-	}
-
-	subject := string(parsedToken.Subject)
-
-	user, err := app.models.DB.GetUserByUsername(subject)
-
-	if err != nil {
-		app.errorJSON(w, err, http.StatusUnauthorized)
 		return
 	}
 
