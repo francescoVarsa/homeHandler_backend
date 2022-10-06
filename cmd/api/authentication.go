@@ -258,6 +258,8 @@ func (app *application) SaveNewPaasword(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	println(claims.ID)
+	println(string(claims.Subject))
+	println(string(claims.RawHeader))
 
+	app.writeJSON(w, http.StatusOK, "valid token", "message")
 }
