@@ -265,7 +265,7 @@ func (app *application) SaveNewPasword(w http.ResponseWriter, r *http.Request) {
 	userEmail := claims.Subject
 	user, err := app.models.DB.GetUserByUsername(userEmail)
 
-	if err != nil {
+	if err != nil || user.ResetRequestDate == "not-set" {
 		app.errorJSON(w, errors.New("any reset password email was emitted before"), http.StatusUnauthorized)
 		return
 	}
