@@ -331,3 +331,18 @@ func (m *DBModel) GetUserResetToken(id int) (string, error) {
 
 	return resetToken, nil
 }
+
+func (m *DBModel) SetNewPassword(id int, newPassword string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `update users set reset_token = $1, password = $2, updated_at = $3 where id = $4`
+
+	_, err := m.DB.ExecContext(ctx, query, nil, newPassword, time.Now(), id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

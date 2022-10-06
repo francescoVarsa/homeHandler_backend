@@ -246,20 +246,41 @@ func (app *application) SaveNewPaasword(w http.ResponseWriter, r *http.Request) 
 	}
 
 	secret := os.Getenv("jwt_secret")
-	claims, err := jwt.HMACCheck([]byte(payload.Token), []byte(hashingSecret(secret)))
+	parsedToken, err := jwt.HMACCheck([]byte(payload.Token), []byte(hashingSecret(secret)))
 
 	if err != nil {
 		app.errorJSON(w, err)
 		return
 	}
 
-	if !claims.Valid(time.Now()) {
+	if !parsedToken.Valid(time.Now()) {
 		app.errorJSON(w, errors.New("token has expired"))
 		return
 	}
 
-	println(string(claims.Subject))
-	println(string(claims.RawHeader))
+	subject := string(parsedToken.Subject)
 
-	app.writeJSON(w, http.StatusOK, "valid token", "message")
+	user, err := app.models.DB.GetUserByUsername(subject)
+
+	if err != nil {
+		app.errorJSON(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	// Get the new password from the request payload
+	newPwd, err := bcrypt.GenerateFromPassword([]byte(payload.NewPassword), 12)
+
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	err = app.models.DB.SetNewPassword(user.ID, string(newPwd))
+
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, "Password changed correctly", "message")
 }
