@@ -16,3 +16,5 @@
 
 secrets.txt
 *.env
+.vscode
+!.vscode/launch.json
