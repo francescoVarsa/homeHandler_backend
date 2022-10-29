@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  server:
+    image: server
+    build:
+      context: ./../../
+      dockerfile: ./docker/dev/Dockerfile
+    environment:
+      - ENVIRONMENT=dev
+    volumes:
+      - ./../../:/app
+    ports:
+      - 4000:4000
+
+  nginx:
+    build: 
+      context: ./../../nginx/dev/
+      dockerfile: ./../../nginx/dev/Dockerfile
+    ports:
+      - 80:80
+    depends_on:
+      - "server"  
+
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+    secrets:
+      - db_password
+    ports:
+      - '5435:5435'
+    volumes: 
+      - ./db:/var/lib/postgresql/data56ga
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    depends_on:
+      - "server"
+
+  mailhog:
+    image: mailhog/mailhog
+    logging:
+      driver: 'none'  # disable saving logs
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+    depends_on:
+      - "server"
+secrets:
+  db_password:
+    file: ./../../secrets.txt

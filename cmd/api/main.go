@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"homeHandler/models"
 	"log"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/spf13/viper"
 	mail "github.com/xhit/go-simple-mail/v2"
 )
 
@@ -30,7 +30,8 @@ type application struct {
 }
 
 func main() {
-	handleSecrets()
+	configureEnvironment()
+	log.Println("opening db connection")
 	db, err := openDB()
 
 	if err != nil {
@@ -43,14 +44,14 @@ func main() {
 		logger: log.New(os.Stdout, "", log.Ldate|log.Ltime),
 		config: config{
 			version: "v1",
-			port:    4000,
+			port:    viper.GetInt("SERVER_PORT"),
 		},
 		models: models.NewModels(db),
 	}
 
 	srv := &http.Server{
 		Handler: app.router(),
-		Addr:    fmt.Sprintf("127.0.0.1:%d", app.config.port),
+		Addr:    fmt.Sprintf("0.0.0.0:%d", app.config.port),
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
@@ -61,8 +62,8 @@ func main() {
 	// This is the IP address of the container that keeps the mailhog mail server used in
 	// development. If the container is destroyed the IP will change and emails are not be
 	// sended
-	server.Host = "172.18.0.2"
-	server.Port = 1025
+	server.Host = viper.GetString("MAIL_SERVER_HOST")
+	server.Port = viper.GetInt("MAIL_SERVER_PORT")
 	server.Username = "admin@example.com"
 	server.Password = "superSecretPassword"
 	server.ConnectTimeout = 10 * time.Second
@@ -80,7 +81,6 @@ func main() {
 	})
 	app.mailChan = emailChannel
 
-	log.Println("Email server on and ready for incoming emails")
 	go func() {
 		for {
 			msg := <-emailChannel
@@ -97,13 +97,8 @@ func main() {
 }
 
 func openDB() (*sql.DB, error) {
-	pwd := os.Getenv("DB_PASSWORD")
-
-	if pwd == "" {
-		return nil, errors.New("no password for the database was provided")
-	}
-
-	db, err := sql.Open("postgres", fmt.Sprintf("postgres://francesco:%s@localhost/homeManager?sslmode=disable", pwd))
+	dbConnString := fmt.Sprint(viper.Get("DB_STRING"))
+	db, err := sql.Open("postgres", dbConnString)
 
 	if err != nil {
 		return nil, err
@@ -116,4 +111,26 @@ func openDB() (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func configureEnvironment() {
+	envType := os.Getenv("ENVIRONMENT")
+	var envFile string
+
+	if envType == "local" {
+		envFile = ".env"
+	} else if envType == "dev" {
+		envFile = "dev.env"
+	}
+
+	viper.SetConfigFile(envFile)
+	err := viper.ReadInConfig()
+
+	if err != nil {
+		log.Println("ttt")
+		log.Fatal(err)
+		return
+	}
+
+	log.Println("environment loaded")
 }

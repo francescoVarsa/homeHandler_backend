@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/pascaldekloe/jwt"
+	"github.com/spf13/viper"
 )
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
@@ -40,7 +40,7 @@ func (app *application) checkToken(next http.Handler) http.Handler {
 
 		token := headerParts[1]
 
-		claims, err := jwt.HMACCheck([]byte(token), []byte(hashingSecret(os.Getenv("jwt_secret"))))
+		claims, err := jwt.HMACCheck([]byte(token), []byte(hashingSecret(viper.GetString("JWT_SECRET"))))
 
 		if err != nil {
 			app.errorJSON(w, errors.New("unauthorized - failed hmac check"), http.StatusForbidden)

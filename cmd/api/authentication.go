@@ -10,10 +10,10 @@ import (
 	"homeHandler/models"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/pascaldekloe/jwt"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -58,7 +58,7 @@ func createJwt(email string, expirationTime int, secretKey ...string) (string, e
 	if secretKey != nil {
 		secret = secretKey[0]
 	} else {
-		secret = hashingSecret(os.Getenv("jwt_secret"))
+		secret = hashingSecret(viper.GetString("JWT_SECRET"))
 	}
 
 	jwtBytes, err := claims.HMACSign(jwt.HS256, []byte(secret))
