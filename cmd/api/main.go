@@ -68,6 +68,7 @@ func main() {
 	server.Password = "superSecretPassword"
 	server.ConnectTimeout = 10 * time.Second
 	server.SendTimeout = 10 * time.Second
+	server.KeepAlive = true
 
 	smtpClient, err := server.Connect()
 

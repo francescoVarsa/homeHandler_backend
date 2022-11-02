@@ -151,7 +151,7 @@ func (app *application) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(cred.Password))
 
-	if err != nil || len(hashedPwd) == 0 {
+	if err != nil {
 		app.errorJSON(w, err, http.StatusUnauthorized)
 		return
 	}
@@ -213,10 +213,8 @@ func (app *application) resetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secret := hashingSecret(date + user.Email)
-
 	// Generate a token that will be embed in the link in the email for password reset
-	jwt, err := createJwt(user.Email, int(5*time.Minute), secret)
+	jwt, err := createJwt(user.Email, int(5*time.Minute))
 
 	if err != nil {
 		app.errorJSON(w, errors.New("error while saving the temporary auth token"))
@@ -255,6 +253,11 @@ func (app *application) SaveNewPasword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len([]rune(payload.NewPassword)) == 0 {
+		err = errors.New("password cannot be empty")
+		app.errorJSON(w, err, http.StatusBadRequest)
+		return
+	}
 	claims, err := jwt.ParseWithoutCheck([]byte(payload.Token))
 
 	if err != nil {
@@ -270,7 +273,7 @@ func (app *application) SaveNewPasword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secret := user.ResetRequestDate + user.Email
+	secret := viper.GetString("JWT_SECRET")
 	parsedToken, err := jwt.HMACCheck([]byte(payload.Token), []byte(hashingSecret(secret)))
 
 	if err != nil {
