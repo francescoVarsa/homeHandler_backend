@@ -122,6 +122,8 @@ func configureEnvironment() {
 		envFile = ".env"
 	} else if envType == "dev" {
 		envFile = "dev.env"
+	} else if envType == "prod" {
+		envFile = "prod.env"
 	}
 
 	viper.SetConfigFile(envFile)

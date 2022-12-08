@@ -18,3 +18,5 @@ secrets.txt
 *.env
 .vscode
 !.vscode/launch.json
+www.tar.gz
+build
