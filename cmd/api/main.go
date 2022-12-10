@@ -73,7 +73,7 @@ func main() {
 	smtpClient, err := server.Connect()
 
 	if err != nil {
-		log.println("an error occures while tryingo to connect to email server")
+		log.Println("an error occures while tryingo to connect to email server")
 		log.Fatal(err)
 	}
 
