@@ -41,7 +41,7 @@ services:
       - "server"
 
   mailhog:
-    image: mailhog/mailhog
+    image: cd2team/mailhog
     logging:
       driver: 'none'  # disable saving logs
     ports:
