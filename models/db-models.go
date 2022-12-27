@@ -242,23 +242,24 @@ func (m *DBModel) CreateUser(user User) error {
 	return nil
 }
 
-func (m *DBModel) GetUserPassword(email string) (string, error) {
+func (m *DBModel) GetUserStoredCredentials(email string) (int, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	query := `select password from users where email = $1`
+	query := `select password, id from users where email = $1`
 
 	row := m.DB.QueryRowContext(ctx, query, email)
 
 	var pwd string
+	var ID int
 
-	err := row.Scan(&pwd)
+	err := row.Scan(&pwd, &ID)
 
 	if err != nil {
-		return "", err
+		return -1, "", err
 	}
 
-	return pwd, nil
+	return ID, pwd, nil
 }
 
 func (m *DBModel) CheckExistingUser(username string) bool {
@@ -277,6 +278,37 @@ func (m *DBModel) CheckExistingUser(username string) bool {
 
 	return true
 
+}
+
+func (m *DBModel) GetUserByID(ID int) (*User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select email from users where id = $1`
+	row := m.DB.QueryRowContext(ctx, query, ID)
+
+	var username string
+	err := row.Scan(&username)
+
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := m.GetUserByUsername(username)
+
+	if err != nil {
+		return nil, err
+	}
+
+	nutriPlans, err := m.GetNutritionByUser(ID)
+
+	if err != nil {
+		user.NutritionPlans = nil
+	}
+
+	user.NutritionPlans = *nutriPlans
+
+	return user, nil
 }
 
 func (m *DBModel) GetUserByUsername(username string) (*User, error) {

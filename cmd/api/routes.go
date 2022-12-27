@@ -26,6 +26,7 @@ func (app *application) router() http.Handler {
 	router.HandleFunc("/"+apiVersion+"/food/{id}", app.wrapMiddleware(secure.ThenFunc(app.GetFood))).Methods("GET")
 	router.HandleFunc("/"+apiVersion+"/addPlan", app.wrapMiddleware(secure.ThenFunc(app.NewFoodPlan))).Methods("POST")
 	router.HandleFunc("/"+apiVersion+"/addFood", app.wrapMiddleware(secure.ThenFunc(app.AddFoodToPlan))).Methods("POST")
+	router.HandleFunc("/"+apiVersion+"/getUser/{id}", app.wrapMiddleware(secure.ThenFunc(app.GetUserByID))).Methods("GET")
 	router.HandleFunc("/"+apiVersion+"/removePlan/{id}", app.wrapMiddleware(secure.ThenFunc(app.RemoveFoodPlan))).Methods("DELETE")
 	router.HandleFunc("/"+apiVersion+"/updateFood/{id}", app.wrapMiddleware(secure.ThenFunc(app.UpdateFood))).Methods("PATCH")
 

@@ -142,7 +142,7 @@ func (app *application) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashedPwd, err := app.models.DB.GetUserPassword(cred.Username)
+	userID, hashedPwd, err := app.models.DB.GetUserStoredCredentials(cred.Username)
 
 	if err != nil || len(hashedPwd) == 0 {
 		app.errorJSON(w, err, http.StatusUnauthorized)
@@ -165,10 +165,12 @@ func (app *application) SignIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var response struct {
+		ID    int    `json:"id"`
 		Token string `json:"token"`
 	}
 
 	response.Token = token
+	response.ID = userID
 
 	res, err := json.MarshalIndent(&response, "", " ")
 

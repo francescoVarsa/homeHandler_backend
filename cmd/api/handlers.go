@@ -58,6 +58,25 @@ func (app *application) NewFoodPlan(w http.ResponseWriter, r *http.Request) {
 	}, "data")
 }
 
+func (app *application) GetUserByID(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	user, err := app.models.DB.GetUserByID(id)
+
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, &user, "data")
+}
+
 type FoodPayload struct {
 	Foods []struct {
 		PlanID    int    `json:"plan_id"`
