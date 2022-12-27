@@ -131,7 +131,6 @@ func configureEnvironment() {
 	err := viper.ReadInConfig()
 
 	if err != nil {
-		log.Println("ttt")
 		log.Fatal(err)
 		return
 	}
